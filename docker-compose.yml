@@ -1,0 +1,210 @@
+version: '3'
+name: cimed
+services:
+  discovery-service:
+    container_name: discovery-service
+    build: ./cimed-backend/discovery-service
+    image: gabrielaguirre1104074/cimed:discovery-service
+    restart: always
+    ports:
+    - "8761:8761"
+    environment:
+      - eureka.instance.hostname=discovery-service
+    develop:
+      watch:
+        - action: sync+restart
+          path: ./cimed-backend/discovery-service/release/application.jar
+          target: /app/application.jar
+    healthcheck:
+      test: "curl --fail --silent localhost:8761/actuator/health/readiness | grep UP || exit 1"
+      interval: 2s
+      timeout: 3s
+      retries: 15
+      start_period: 2s
+  gateway-service:
+    container_name: gateway-service
+    build: ./cimed-backend/gateway
+    image: gabrielaguirre1104074/cimed:gateway-service
+    restart: always
+    ports:
+    - "8095:8095"
+    - "8096:8096"
+    depends_on:
+      discovery-service:
+        condition: service_healthy
+      keycloak-service:
+        condition: service_healthy
+    environment:
+      - AUTH_SERVICE_URL=http://keycloak-service:8040
+      - EUREKA_SERVICE_URL=http://discovery-service:8761
+      - server.port=8095
+    develop:
+      watch:
+        - action: sync+restart
+          path: ./cimed-backend/gateway/release/application.jar
+          target: /app/application.jar
+    healthcheck:
+      test: "curl --fail --silent localhost:8096/actuator/health/readiness | grep UP || exit 1"
+      interval: 2s
+      timeout: 3s
+      retries: 15
+      start_period: 2s
+  appointment-service:
+    container_name: appointment-service
+    build: ./cimed-backend/appointment-service
+    image: gabrielaguirre1104074/cimed:appointment-service
+    restart: always
+    ports:
+    - "8004:8004"
+    depends_on:
+      discovery-service:
+        condition: service_healthy
+      database-mysql:
+        condition: service_healthy
+      keycloak-service:
+        condition: service_healthy
+      gateway-service:
+        condition: service_healthy
+    environment:
+      - spring.datasource.url=jdbc:mysql://database-mysql:3306/cimed
+      - server.port=8004
+      - app.feign.client.cimed-doctor.url=http://doctor-service:8002
+      - app.feign.client.cimed-user.url=http://patient-service:8001
+      - KEYCLOAK_ISSUER_URI=http://keycloak-service:8040/realms/CimedRealm
+      - EUREKA_URL=http://discovery-service:8761/eureka/
+    develop:
+      watch:
+        - action: sync+restart
+          path: ./cimed-backend/appointment-service/release/application.jar
+          target: /app/application.jar
+    healthcheck:
+      test: "curl --fail --silent localhost:8004/actuator/health/readiness | grep UP || exit 1"
+      interval: 2s
+      timeout: 3s
+      retries: 15
+      start_period: 2s
+  doctor-service:
+    container_name: doctor-service
+    build: ./cimed-backend/doctor-service
+    image: gabrielaguirre1104074/cimed:doctor-service
+    restart: always
+    ports:
+    - "8002:8002"
+    depends_on:
+      gateway-service:
+        condition: service_healthy
+      database-mysql:
+        condition: service_healthy
+      keycloak-service:
+        condition: service_healthy
+    environment:
+      - spring.datasource.url=jdbc:mysql://database-mysql:3306/cimed
+      - KEYCLOAK_ISSUER_URI=http://keycloak-service:8040/realms/CimedRealm
+      - EUREKA_URL=http://discovery-service:8761/eureka/
+      - server.port=8002
+    develop:
+      watch:
+        - action: sync+restart
+          path: ./cimed-backend/doctor-service/release/application.jar
+          target: /app/application.jar
+    healthcheck:
+      test: "curl --fail --silent localhost:8002/actuator/health/readiness | grep UP || exit 1"
+      interval: 2s
+      timeout: 3s
+      retries: 25
+      start_period: 2s
+  users-service:
+    container_name: users-service
+    build: ./cimed-backend/patient-service
+    image: gabrielaguirre1104074/cimed:users-service
+    restart: always
+    ports:
+    - "8001:8001"
+    depends_on:
+      gateway-service:
+        condition: service_healthy
+      database-mysql:
+        condition: service_healthy
+      keycloak-service:
+        condition: service_healthy
+    environment:
+      - spring.datasource.url=jdbc:mysql://database-mysql:3306/cimed
+      - KEYCLOAK_ISSUER_URI=http://keycloak-service:8040/realms/CimedRealm
+      - EUREKA_URL=http://discovery-service:8761/eureka/
+      - server.port=8001
+    develop:
+      watch:
+        - action: sync+restart
+          path: ./cimed-backend/patient-service/release/application.jar
+          target: /app/application.jar
+    healthcheck:
+      test: "curl --fail --silent localhost:8001/actuator/health/readiness | grep UP || exit 1"
+      interval: 2s
+      timeout: 3s
+      retries: 25
+      start_period: 2s
+  database-mysql:
+    container_name: database-mysql
+    image: "mysql:latest"
+    ports:
+    - "3307:3306"
+    environment:
+    - MYSQL_ROOT_PASSWORD=root
+    - MYSQL_DATABASE=cimed
+    healthcheck:
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
+      interval: 2s
+      timeout: 3s
+      retries: 10
+      start_period: 2s
+  keycloak-service:
+    container_name: keycloak-service
+    image: quay.io/keycloak/keycloak:latest
+    command:
+      - "start-dev"
+      - "--import-realm"
+      - "--http-port=8040"
+    ports:
+      - "8040:8040"
+    depends_on:
+      database-postgres:
+        condition: service_healthy
+    environment:
+      - KC_BOOTSTRAP_ADMIN_USERNAME=admin
+      - KC_BOOTSTRAP_ADMIN_PASSWORD=admin
+      - KC_DB=postgres
+      - KC_DB_USERNAME=postgres
+      - KC_DB_PASSWORD=postgres
+      - KC_DB_URL=jdbc:postgresql://database-postgres:5432/keycloak
+      - KEYCLOAK_IMPORT=/tmp/cimed-realm.json
+      - KC_HOSTNAME_PORT=8040
+      - KC_METRICS_ENABLED=true
+      - KC_HEALTH_ENABLED=true
+      - KEYCLOAK_EXTRA_ARGS="--import-realm"
+    volumes:
+      - ./cimed-realm.json:/opt/keycloak/data/import/cimed-realm.json
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          'exec 3<>/dev/tcp/localhost/8040; echo -e "GET /health/ready HTTP/1.1\nhost: localhost:8080\n" >&3; timeout --preserve-status 1 cat <&3 | grep -m 1 status | grep -m 1 UP; ERROR=$?; exec 3<&-; exec 3>&-; exit $ERROR'
+        ]
+      interval: 2s
+      timeout: 3s
+      retries: 15
+      start_period: 2s
+  database-postgres:
+    container_name: database-postgres
+    image: "postgres:latest"
+    ports:
+      - "5433:5432"
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=keycloak
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 2s
+      timeout: 3s
+      retries: 10
+      start_period: 2s

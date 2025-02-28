@@ -1,6 +1,8 @@
 server:
   port: 8095
-
+  error:
+    whitelabel:
+      enabled: false
 spring:
   application:
     name: cimed-gateway
@@ -79,9 +81,12 @@ spring:
 eureka:
   instance:
     hostname: localhost
+    prefer-ip-address: true
   client:
     availability-zones:
-        defaultZone: http://localhost:8761/eureka/
+        defaultZone: ${EUREKA_SERVICE_URL:http://localhost:8761}/eureka/
+    service-url:
+        defaultZone: ${EUREKA_SERVICE_URL:http://localhost:8761}/eureka/
 
 logging:
   level:
@@ -91,3 +96,20 @@ logging:
     org.springframework.security: DEBUG
     org.springframework.security.oauth2: DEBUG
     org.springframework.cloud.gateway: DEBUG
+
+management:
+  health:
+    livenessstate:
+      enabled: true
+    readinessstate:
+      enabled: true
+  endpoints:
+    web:
+      exposure:
+        include: '*'
+  endpoint:
+    health:
+      probes:
+        enabled: true
+  server:
+    port: 8096

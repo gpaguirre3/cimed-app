@@ -18,14 +18,19 @@ import java.util.List;
 public class SecurityConfig {
     @Bean
     SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) {
-        return http
-                .authorizeExchange(exchange -> exchange
-                        .anyExchange().permitAll())
-                .oauth2Login(Customizer.withDefaults())
-                .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))
-                .csrf(ServerHttpSecurity.CsrfSpec::disable)
-                .cors(Customizer.withDefaults())
-                .build();
+        http.httpBasic(ServerHttpSecurity.HttpBasicSpec::disable);
+        http.formLogin(ServerHttpSecurity.FormLoginSpec::disable);
+        http.logout(ServerHttpSecurity.LogoutSpec::disable);
+        http.csrf(ServerHttpSecurity.CsrfSpec::disable);
+        http.cors(Customizer.withDefaults());
+
+        http
+            .authorizeExchange(exchange -> exchange
+                    .anyExchange().permitAll())
+            .oauth2Login(Customizer.withDefaults())
+            .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()));
+
+        return http.build();
     }
 
     @Bean
