@@ -180,6 +180,8 @@ services:
       - KC_HOSTNAME_PORT=8040
       - KC_METRICS_ENABLED=true
       - KC_HEALTH_ENABLED=true
+    volumes:
+      - ./cimed-realm.json:/opt/keycloak/data/import/cimed-realm.json
     healthcheck:
       test:
         [
