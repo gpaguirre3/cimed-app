@@ -70,7 +70,7 @@ public class SecurityConfiguration {
         config.setAllowedOrigins(List.of(
                 "http://localhost:4200",
                 "http://localhost",
-                "http://20.197.227.154"
+                "http://172.172.141.223:4200"
         ));
         config.addAllowedHeader("*");
         config.setAllowedMethods(

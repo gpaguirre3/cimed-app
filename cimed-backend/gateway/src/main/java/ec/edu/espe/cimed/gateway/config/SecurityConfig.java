@@ -52,7 +52,7 @@ public class SecurityConfig {
         corsConfiguration.setAllowedOrigins(List.of(
                 "http://localhost:4200",
                 "http://localhost",
-                "http://20.197.227.154"
+                "http://172.172.141.223:4200"
         ));
         corsConfiguration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH", "HEAD"));
         corsConfiguration.setAllowedHeaders(List.of("*"));
