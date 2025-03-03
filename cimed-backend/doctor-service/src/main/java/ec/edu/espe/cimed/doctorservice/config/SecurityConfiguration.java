@@ -39,7 +39,7 @@ public class SecurityConfiguration {
         http.cors(withDefaults());
         http.authorizeHttpRequests(authorize -> {
             authorize.requestMatchers(HttpMethod.POST, "/doctors/**").hasRole("ADMIN");
-            authorize.requestMatchers(HttpMethod.GET, "/doctors/**").hasRole("ADMIN");
+            authorize.requestMatchers(HttpMethod.GET, "/doctors/**").hasAnyRole("ADMIN", "USER");
             authorize.requestMatchers(HttpMethod.PUT, "/doctors/**").hasRole("ADMIN");
             authorize.requestMatchers(HttpMethod.DELETE, "/doctors/**").hasRole("ADMIN");
             authorize.anyRequest().authenticated();

@@ -50,7 +50,6 @@ public class UserServiceImpl implements UserService {
                 .lastname(userDto.getLastname())
                 .email(userDto.getEmail())
                 .username(userDto.getUsername())
-                .password(userDto.getPassword())
                 .phone(userDto.getPhone())
                 .address(userDto.getAddress())
                 .birthdate(userDto.getBirthdate())
@@ -66,7 +65,6 @@ public class UserServiceImpl implements UserService {
         entity.setLastname(userDto.getLastname());
         entity.setEmail(userDto.getEmail());
         entity.setUsername(userDto.getUsername());
-        entity.setPassword(userDto.getPassword());
         entity.setPhone(userDto.getPhone());
         entity.setAddress(userDto.getAddress());
         entity.setBirthdate(userDto.getBirthdate());

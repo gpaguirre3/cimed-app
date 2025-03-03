@@ -20,7 +20,6 @@ public class UserDto {
     private String lastname;
     private String email;
     private String username;
-    private String password;
     @Enumerated(EnumType.STRING)
     private UserRole role;
     private String phone;
