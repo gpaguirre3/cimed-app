@@ -35,7 +35,7 @@ services:
       keycloak-service:
         condition: service_healthy
     environment:
-      - AUTH_SERVICE_URL=http://keycloak-service:8040
+      - AUTH_SERVICE_URL=http://${KEYCLOAK_HOSTNAME}:8040
       - EUREKA_SERVICE_URL=http://discovery-service:8761
       - server.port=8095
     develop:
@@ -70,7 +70,7 @@ services:
       - server.port=8004
       - app.feign.client.cimed-doctor.url=http://doctor-service:8002
       - app.feign.client.cimed-user.url=http://patient-service:8001
-      - KEYCLOAK_ISSUER_URI=http://keycloak-service:8040/realms/CimedRealm
+      - KEYCLOAK_ISSUER_URI=http://${KEYCLOAK_HOSTNAME}:8040/realms/CimedRealm
       - EUREKA_URL=http://discovery-service:8761/eureka/
     develop:
       watch:
@@ -99,7 +99,7 @@ services:
         condition: service_healthy
     environment:
       - spring.datasource.url=jdbc:mysql://database-mysql:3306/cimed
-      - KEYCLOAK_ISSUER_URI=http://keycloak-service:8040/realms/CimedRealm
+      - KEYCLOAK_ISSUER_URI=http://${KEYCLOAK_HOSTNAME}:8040/realms/CimedRealm
       - EUREKA_URL=http://discovery-service:8761/eureka/
       - server.port=8002
     develop:
@@ -129,7 +129,7 @@ services:
         condition: service_healthy
     environment:
       - spring.datasource.url=jdbc:mysql://database-mysql:3306/cimed
-      - KEYCLOAK_ISSUER_URI=http://keycloak-service:8040/realms/CimedRealm
+      - KEYCLOAK_ISSUER_URI=http://${KEYCLOAK_HOSTNAME}:8040/realms/CimedRealm
       - EUREKA_URL=http://discovery-service:8761/eureka/
       - server.port=8001
     develop:
@@ -180,9 +180,6 @@ services:
       - KC_HOSTNAME_PORT=8040
       - KC_METRICS_ENABLED=true
       - KC_HEALTH_ENABLED=true
-      - KEYCLOAK_EXTRA_ARGS="--import-realm"
-    volumes:
-      - ./cimed-realm.json:/opt/keycloak/data/import/cimed-realm.json
     healthcheck:
       test:
         [
@@ -191,8 +188,8 @@ services:
         ]
       interval: 2s
       timeout: 3s
-      retries: 15
-      start_period: 2s
+      retries: 30
+      start_period: 5s
   database-postgres:
     container_name: database-postgres
     image: "postgres:latest"
@@ -206,5 +203,5 @@ services:
       test: ["CMD", "pg_isready", "-U", "postgres"]
       interval: 2s
       timeout: 3s
-      retries: 10
+      retries: 25
       start_period: 2s
